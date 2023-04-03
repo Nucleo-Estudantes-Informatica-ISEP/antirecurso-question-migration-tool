@@ -18,17 +18,21 @@ def get_address(line):
 
 
 def get_list(lists, list_addr):
-    for _list in lists:
-        if _list['address'] == list_addr:
-            return _list['answers']
-    return None
+    return next(
+        (_list['answers'] for _list in lists if _list['address'] == list_addr),
+        None,
+    )
 
 
 def get_answer_text(answers, answer_addr):
-    for answer in answers:
-        if answer['address'] == answer_addr:
-            return answer['text']
-    return None
+    return next(
+        (
+            answer['text']
+            for answer in answers
+            if answer['address'] == answer_addr
+        ),
+        None,
+    )
 
 
 def main():
@@ -43,12 +47,9 @@ def main():
         for line in result.splitlines():
             line = line.decode('utf-8')
             if line.startswith('['):
-                object = []
-                object.append(line)
+                object = [line]
                 questions.append(object)
-            else:
-                if line.startswith(']'):
-                    continue
+            elif not line.startswith(']'):
                 object.append(line.strip())
         classes_questions[get_class_name(file)] = questions
 
@@ -56,12 +57,12 @@ def main():
     answers = {}
     lists = {}
 
-    for _class in classes_questions:
+    for _class, value in classes_questions.items():
         questions[_class] = []
         answers[_class] = []
         lists[_class] = []
 
-        for object in classes_questions[_class]:
+        for object in value:
             if object[2].endswith(f'{QUESTION_CLASS_SUFFIX}:'):
                 list_address = object[3].split('_h')[1].split(';')[
                     0].replace('= r_', '')
@@ -72,7 +73,7 @@ def main():
                     object[0]), "text": object[3].split('\"')[1]})
             elif object[2].endswith('ArrayList'):
                 a = object[4:]
-                for i in range(0, len(a)):
+                for i in range(len(a)):
                     if a[i].strip() == '':
                         a = a[:i]
                         break
